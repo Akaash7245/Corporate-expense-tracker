@@ -25,31 +25,31 @@ A full-stack, real-time expense tracking platform for corporate organizations. E
 ## Features
 
 ### For Employees
-- ✅ Submit expenses with receipt upload
-- ✅ Track expense status in real-time
-- ✅ View personal expense history with filters
-- ✅ Receive instant notifications on approvals/rejections
+- Submit expenses with receipt upload
+- Track expense status in real-time
+- View personal expense history with filters
+- Receive instant notifications on approvals/rejections
 
 ### For Managers
-- ✅ Review and approve/reject team expenses
-- ✅ Bulk approval actions
-- ✅ Real-time alerts for new submissions
-- ✅ Team spending overview
+- Review and approve/reject team expenses
+- Bulk approval actions
+- Real-time alerts for new submissions
+- Team spending overview
 
 ### For Finance
-- ✅ Organization-wide expense analytics
-- ✅ Budget utilization monitoring
-- ✅ Category breakdown reports
-- ✅ Monthly trend analysis with Chart.js
+- Organization-wide expense analytics
+- Budget utilization monitoring
+- Category breakdown reports
+- Monthly trend analysis with Chart.js
 
 ### System Features
-- 🔐 JWT Authentication with role-based access control
-- 📡 Real-time updates via Socket.io (WebSocket)
-- 📊 5 interactive Chart.js visualizations
-- 🤖 ML-powered anomaly detection and fraud scoring (FastAPI)
-- 📸 Receipt upload with image preview
-- 🔔 Real-time notification system
-- 🌙 Premium dark theme with glassmorphism design
+- JWT Authentication with role-based access control
+- Real-time updates via Socket.io (WebSocket)
+- 5 interactive Chart.js visualizations
+- ML-powered anomaly detection and fraud scoring (FastAPI)
+- Receipt upload with image preview
+- Real-time notification system
+- Premium dark theme with glassmorphism design
 
 ## Tech Stack
 
@@ -173,7 +173,3 @@ Project/
 │   └── requirements.txt
 └── uploads/                   # Receipt storage
 ```
-
-## License
-
-MIT
