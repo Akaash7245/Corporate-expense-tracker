@@ -25,8 +25,9 @@ const server = http.createServer(app);
 // Socket.io setup
 const io = new Server(server, {
   cors: {
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
+    origin: '*', // Allow all origins for the demo
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    credentials: true,
   },
 });
 
@@ -35,7 +36,15 @@ app.set('io', io);
 
 // Middleware
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: process.env.CORS_ORIGIN || 'http://localhost:5173', credentials: true }));
+
+// Allow all origins dynamically to prevent CORS blocks from varying Vercel URLs
+app.use(cors({ 
+  origin: function (origin, callback) {
+    callback(null, true);
+  }, 
+  credentials: true 
+}));
+
 app.use(morgan('dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
