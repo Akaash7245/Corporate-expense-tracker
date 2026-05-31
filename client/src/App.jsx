@@ -53,7 +53,8 @@ export default function App() {
       try {
         const { io } = await import('socket.io-client');
         const token = localStorage.getItem('token');
-        socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
+        // Hardcoding the production Render URL for socket connections
+        socket = io('https://corporate-expense-tracker-test.onrender.com', {
           auth: { token },
           transports: ['websocket', 'polling'],
         });
