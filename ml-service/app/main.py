@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import ocr, anomaly
+from app.routers import ocr, anomaly, forecasting
 
 app = FastAPI(
     title="ExpenseFlow ML Service",
@@ -8,9 +8,11 @@ app = FastAPI(
     version="1.0.0",
 )
 
+import os
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:5000"],
+    allow_origins=os.environ.get("CORS_ORIGINS", "http://localhost:5173,http://localhost:5000").split(","),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -18,6 +20,7 @@ app.add_middleware(
 
 app.include_router(ocr.router, prefix="/api/ocr", tags=["OCR"])
 app.include_router(anomaly.router, prefix="/api/anomaly", tags=["Anomaly Detection"])
+app.include_router(forecasting.router, prefix="/api/forecast", tags=["Forecasting"])
 
 
 @app.get("/health")

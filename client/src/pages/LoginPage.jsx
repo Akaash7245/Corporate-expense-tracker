@@ -103,26 +103,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="login-divider">Quick Access</div>
 
-          <div className="login-demo-accounts">
-            {demoAccounts.map(account => (
-              <button
-                key={account.email}
-                className="demo-account-btn"
-                onClick={() => handleDemoLogin(account)}
-                type="button"
-              >
-                <div className="demo-avatar" style={{ background: account.color }}>
-                  {account.initials}
-                </div>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontWeight: 600, fontSize: '0.8125rem' }}>{account.label}</div>
-                  <div style={{ fontSize: '0.625rem', color: 'var(--color-text-muted)' }}>{account.role}</div>
-                </div>
-              </button>
-            ))}
-          </div>
         </div>
       </div>
 

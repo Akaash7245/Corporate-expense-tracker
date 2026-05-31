@@ -84,6 +84,15 @@ const Expense = sequelize.define('Expense', {
       this.setDataValue('tags', Array.isArray(val) ? val.join(',') : val);
     },
   },
+  hash: {
+    type: DataTypes.STRING,
+    allowNull: true,
+  },
+  previousHash: {
+    type: DataTypes.STRING,
+    allowNull: true,
+    field: 'previous_hash',
+  },
 });
 
 module.exports = Expense;

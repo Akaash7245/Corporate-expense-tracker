@@ -163,7 +163,7 @@ export default function ExpenseDetailPage({ expenseId, onNavigate }) {
               <Receipt size={16} style={{ color: 'var(--color-accent)' }} /> Receipt
             </h3>
             {expense.receiptUrl ? (
-              <img src={`http://localhost:5000${expense.receiptUrl}`} alt="Receipt" style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)' }} />
+              <img src={`${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000'}${expense.receiptUrl}`} alt="Receipt" style={{ maxWidth: '100%', borderRadius: 'var(--radius-md)' }} />
             ) : (
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', padding: 'var(--space-xl)',

@@ -53,7 +53,7 @@ export default function App() {
       try {
         const { io } = await import('socket.io-client');
         const token = localStorage.getItem('token');
-        socket = io('http://localhost:5000', {
+        socket = io(import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:5000', {
           auth: { token },
           transports: ['websocket', 'polling'],
         });

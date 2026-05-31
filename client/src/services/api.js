@@ -1,4 +1,4 @@
-const API_BASE = 'https://corporate-expense-tracker.onrender.com/';
+const API_BASE = import.meta.env.VITE_API_URL || 'https://corporate-expense-tracker.onrender.com/';
 
 // Format currency in Indian Rupees with proper lakh/crore formatting
 export const formatCurrency = (amount) => {
