@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { notificationService } from '../../services/api';
-import { Bell, Search, X } from 'lucide-react';
+import { Bell, Search, Sun, Moon } from 'lucide-react';
+import { useTheme } from '../../context/ThemeContext';
 
 export default function Header({ collapsed, notifications, unreadCount, onRefreshNotifications }) {
   const [showNotifications, setShowNotifications] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const { theme, toggleTheme } = useTheme();
 
   const handleMarkAllRead = async () => {
     try {
@@ -47,6 +49,10 @@ export default function Header({ collapsed, notifications, unreadCount, onRefres
       </div>
 
       <div className="header-actions">
+        <button className="theme-toggle-btn" onClick={toggleTheme} aria-label="Toggle Theme">
+          {theme === 'light' ? <Moon size={18} /> : <Sun size={18} />}
+        </button>
+
         <button
           className="notification-btn"
           onClick={() => setShowNotifications(!showNotifications)}
