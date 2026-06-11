@@ -148,6 +148,7 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
     formData.append('isTable', 'true');
     formData.append('scale', 'true');
     formData.append('detectOrientation', 'true');
+    formData.append('OCREngine', '2'); // Engine 2 is much better for low-res receipts and numbers
 
     // Run OCR using OCR.space Free API
     const response = await fetch('https://api.ocr.space/parse/image', {
