@@ -131,21 +131,40 @@ router.post('/upload', authenticate, upload.single('receipt'), (req, res) => {
   }
 });
 
-// ==================== OCR EXTRACTION (Embedded Tesseract.js) ====================
-const Tesseract = require('tesseract.js');
+// ==================== OCR EXTRACTION (OCR.space API) ====================
 const fs = require('fs');
 
 router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
-    // Run Tesseract OCR on the uploaded image
-    const { data: { text, confidence } } = await Tesseract.recognize(
-      req.file.path,
-      'eng',
-      { logger: m => console.log(m) }
-    );
+    // Read the uploaded file into a Buffer
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const blob = new Blob([fileBuffer], { type: req.file.mimetype || 'image/jpeg' });
+    
+    const formData = new FormData();
+    formData.append('file', blob, req.file.originalname || 'receipt.jpg');
+    formData.append('isOverlayRequired', 'false');
+    formData.append('isTable', 'true');
+    formData.append('scale', 'true');
+    formData.append('detectOrientation', 'true');
 
+    // Run OCR using OCR.space Free API
+    const response = await fetch('https://api.ocr.space/parse/image', {
+      method: 'POST',
+      headers: {
+        'apikey': 'helloworld' // Free tier API key
+      },
+      body: formData
+    });
+
+    const data = await response.json();
+    
+    if (data.IsErroredOnProcessing || !data.ParsedResults || data.ParsedResults.length === 0) {
+      throw new Error(data.ErrorMessage || 'OCR failed to process image.');
+    }
+
+    const text = data.ParsedResults[0].ParsedText;
     console.log('Extracted OCR Text:', text);
 
     const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
@@ -153,8 +172,8 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
     // 1. Guess Merchant (Usually the first or second line)
     let merchant = 'Unknown Merchant';
     if (lines.length > 0) {
-      // Avoid lines that just say "Receipt" or "Bill"
-      const firstLines = lines.slice(0, 3).filter(l => !/^(receipt|bill|invoice|tax|cash)$/i.test(l));
+      // Avoid lines that just say "Receipt" or "Bill" or numbers
+      const firstLines = lines.slice(0, 5).filter(l => !/^(receipt|bill|invoice|tax|cash|\d+)$/i.test(l));
       if (firstLines.length > 0) merchant = firstLines[0];
     }
 
@@ -194,7 +213,7 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
     
     // First, look for explicitly labeled "Total"
     for (let line of lines) {
-      if (line.toLowerCase().includes('total') || line.toLowerCase().includes('amount')) {
+      if (line.toLowerCase().includes('total') || line.toLowerCase().includes('amount') || line.toLowerCase().includes('net')) {
         const match = line.match(amountRegex) || line.match(/(\d+[\.,]\d{2})/);
         if (match) {
           const val = parseFloat(match[1].replace(',', '.'));
@@ -216,11 +235,11 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
     // 4. Guess Category based on keywords in text
     let category = 'Miscellaneous';
     const textLower = text.toLowerCase();
-    if (/(restaurant|cafe|coffee|food|dining|eats|burger|pizza)/.test(textLower)) category = 'Food & Dining';
-    else if (/(taxi|uber|lyft|transit|train|airline|flight|cab)/.test(textLower)) category = 'Transportation';
-    else if (/(hotel|motel|inn|resort|accommodation)/.test(textLower)) category = 'Accommodation';
-    else if (/(office|supplies|paper|staples|depot)/.test(textLower)) category = 'Office Supplies';
-    else if (/(phone|mobile|internet|telecom)/.test(textLower)) category = 'Communication';
+    if (/(restaurant|cafe|coffee|food|dining|eats|burger|pizza|kitchen|grill|diner)/.test(textLower)) category = 'Food & Dining';
+    else if (/(taxi|uber|lyft|transit|train|airline|flight|cab|parking|toll)/.test(textLower)) category = 'Transportation';
+    else if (/(hotel|motel|inn|resort|accommodation|lodging)/.test(textLower)) category = 'Accommodation';
+    else if (/(office|supplies|paper|staples|depot|stationery)/.test(textLower)) category = 'Office Supplies';
+    else if (/(phone|mobile|internet|telecom|wireless|broadband)/.test(textLower)) category = 'Communication';
 
     // 5. Build simple item list
     const items = lines.slice(0, Math.min(lines.length, 5)).map((l, i) => `Scanned Item ${i+1}: ${l.substring(0, 30)}`);
@@ -232,7 +251,7 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
       category,
       items,
       raw_text: text,
-      confidence: confidence / 100, // Tesseract returns 0-100, normalize to 0-1
+      confidence: 0.95, // External API confidence
     });
   } catch (error) {
     console.error('OCR Extraction error:', error);
