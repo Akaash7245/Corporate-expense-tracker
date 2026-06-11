@@ -141,4 +141,13 @@ export const uploadService = {
   },
 };
 
+// OCR Service
+export const ocrService = {
+  extractReceipt: (file) => {
+    const formData = new FormData();
+    formData.append('receipt', file);
+    return api.post('/ocr/extract', formData);
+  },
+};
+
 export default api;

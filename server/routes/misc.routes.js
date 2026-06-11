@@ -131,4 +131,35 @@ router.post('/upload', authenticate, upload.single('receipt'), (req, res) => {
   }
 });
 
+router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, res) => {
+  try {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
+
+    const mlUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    const fs = require('fs');
+    
+    // Create form data to forward to the FastAPI service
+    const formData = new FormData();
+    const fileBuffer = fs.readFileSync(req.file.path);
+    const fileBlob = new Blob([fileBuffer], { type: req.file.mimetype });
+    formData.append('file', fileBlob, req.file.originalname);
+
+    const response = await fetch(`${mlUrl}/api/ocr/extract`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      return res.status(response.status).json({ error: `ML service error: ${errorText}` });
+    }
+
+    const data = await response.json();
+    res.json(data);
+  } catch (error) {
+    console.error('OCR Extraction error:', error);
+    res.status(500).json({ error: 'OCR extraction failed.' });
+  }
+});
+
 module.exports = router;

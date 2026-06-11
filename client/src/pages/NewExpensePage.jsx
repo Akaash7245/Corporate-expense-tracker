@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { expenseService, uploadService } from '../services/api';
+import { expenseService, uploadService, ocrService } from '../services/api';
 import { useToast } from '../context/ToastContext';
 import { ArrowLeft, Upload, Camera, Send, DollarSign, Calendar, Tag, Store, FileText } from 'lucide-react';
 
@@ -26,11 +26,45 @@ export default function NewExpensePage({ onNavigate }) {
     if (file) processFile(file);
   };
 
-  const processFile = (file) => {
+  const processFile = async (file) => {
     setReceiptFile(file);
     const reader = new FileReader();
     reader.onload = (e) => setReceiptPreview(e.target.result);
     reader.readAsDataURL(file);
+
+    toast.info('Scanning Receipt', 'Extracting details from receipt image...');
+    try {
+      const data = await ocrService.extractReceipt(file);
+      if (data) {
+        // Simple logic to guess category from merchant
+        let detectedCategory = 'Travel';
+        const merchantLower = (data.merchant || '').toLowerCase();
+        if (merchantLower.includes('starbucks') || merchantLower.includes('chipotle')) {
+          detectedCategory = 'Food & Dining';
+        } else if (merchantLower.includes('uber')) {
+          detectedCategory = 'Transportation';
+        } else if (merchantLower.includes('marriott') || merchantLower.includes('hilton')) {
+          detectedCategory = 'Accommodation';
+        } else if (merchantLower.includes('office depot')) {
+          detectedCategory = 'Office Supplies';
+        } else if (merchantLower.includes('amazon')) {
+          detectedCategory = 'Miscellaneous';
+        }
+
+        setForm(prev => ({
+          ...prev,
+          amount: data.amount ? data.amount.toString() : prev.amount,
+          merchant: data.merchant || prev.merchant,
+          date: data.date || prev.date,
+          category: detectedCategory,
+          title: data.merchant ? `${detectedCategory}: ${data.merchant}` : prev.title,
+        }));
+        toast.success('Receipt Scanned', 'Form fields autofilled successfully.');
+      }
+    } catch (err) {
+      console.error('OCR Extraction error:', err);
+      toast.warning('OCR Scanning Failed', 'Could not extract details automatically.');
+    }
   };
 
   const handleDrop = (e) => {
