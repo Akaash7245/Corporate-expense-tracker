@@ -55,7 +55,7 @@ export default function LoginPage() {
             <div className="login-brand-icon">
               <Wallet size={26} />
             </div>
-            <h1>ExpenseFlow</h1>
+            <h1>Spendora</h1>
             <p>Enterprise expense management platform</p>
           </div>
 

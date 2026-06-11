@@ -29,7 +29,7 @@ export default function Sidebar({ currentPage, onNavigate, pendingCount, collaps
         <div className="sidebar-brand-icon">
           <Wallet size={18} />
         </div>
-        <span className="sidebar-brand-text">ExpenseFlow</span>
+        <span className="sidebar-brand-text">Spendora</span>
       </div>
 
       <nav className="sidebar-nav">
