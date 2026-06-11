@@ -33,23 +33,41 @@ export default function NewExpensePage({ onNavigate }) {
     reader.readAsDataURL(file);
 
     toast.info('Scanning Receipt', 'Extracting details from receipt image...');
+    
+    // Clear previous OCR data so it doesn't carry over
+    setForm(prev => ({
+      ...prev,
+      amount: '',
+      merchant: '',
+      title: ''
+    }));
+
     try {
       const data = await ocrService.extractReceipt(file);
       if (data) {
         const category = data.category || 'Travel';
         setForm(prev => ({
           ...prev,
-          amount: data.amount ? data.amount.toString() : prev.amount,
-          merchant: data.merchant || prev.merchant,
+          amount: data.amount ? data.amount.toString() : '',
+          merchant: data.merchant || '',
           date: data.date || prev.date,
           category,
-          title: data.merchant ? `${category}: ${data.merchant}` : prev.title,
+          title: data.merchant ? `${category}: ${data.merchant}` : '',
         }));
-        toast.success('Receipt Scanned', `Detected ${data.merchant} - Rs.${data.amount} (${Math.round(data.confidence * 100)}% confidence)`);
+        
+        if (data.amount && data.merchant && data.merchant !== 'Unknown Merchant') {
+           toast.success('Receipt Scanned', `Detected ${data.merchant} - Rs.${data.amount}`);
+        } else {
+           toast.info('Scan Complete', 'Extracted partial details. Please review manually.');
+        }
       }
     } catch (err) {
       console.error('OCR Extraction error:', err);
-      toast.warning('OCR Unavailable', 'Could not extract details. Please fill in manually.');
+      // Determine if it was a file size issue based on common API limits
+      const errorMsg = file.size > 1024 * 1024 
+        ? 'Image is too large (max 1MB). Please compress and try again.'
+        : 'Could not extract details automatically. Please fill in manually.';
+      toast.warning('OCR Unavailable', errorMsg);
     }
   };
 
