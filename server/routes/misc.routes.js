@@ -172,8 +172,8 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
     // 1. Guess Merchant (Usually the first or second line)
     let merchant = 'Unknown Merchant';
     if (lines.length > 0) {
-      // Avoid lines that just say "Receipt" or "Bill" or numbers
-      const firstLines = lines.slice(0, 5).filter(l => !/^(receipt|bill|invoice|tax|cash|\d+)$/i.test(l));
+      // Avoid lines that just say "Receipt" or "Bill" or numbers or very short strings
+      const firstLines = lines.slice(0, 5).filter(l => !/^(receipt|bill|invoice|tax|cash|\d+|date|time)$/i.test(l) && l.length > 3);
       if (firstLines.length > 0) merchant = firstLines[0];
     }
 
@@ -184,12 +184,13 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
       /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/  // YYYY-MM-DD
     ];
 
+    let foundDate = false;
     for (let line of lines) {
+      if (foundDate) break;
       for (let regex of dateRegexes) {
         const match = line.match(regex);
         if (match) {
           try {
-            // Very naive date parsing, assumes DD/MM/YY or DD/MM/YYYY
             let d = parseInt(match[1], 10);
             let m = parseInt(match[2], 10) - 1; // 0-indexed
             let y = parseInt(match[3], 10);
@@ -197,6 +198,7 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
             const parsedDate = new Date(y, m, d);
             if (!isNaN(parsedDate.getTime())) {
               dateStr = parsedDate.toISOString().split('T')[0];
+              foundDate = true;
               break;
             }
           } catch (e) {
@@ -208,24 +210,32 @@ router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, 
 
     // 3. Guess Amount (Find the largest decimal number, usually the total)
     let amount = 0.0;
-    const amountRegex = /[\$£€Rs\s]*(\d+[\.,]\d{2})/i;
     let maxAmount = 0.0;
+    
+    const extractAmount = (line) => {
+      // Matches numbers with optional commas and a dot (e.g. 5,445.30 or 5.445,30 or 5445.30)
+      const match = line.match(/(\d+[,\.\d]*[,\.]\d{2})/);
+      if (match) {
+        let numStr = match[1];
+        if (/,(\d{2})$/.test(numStr)) {
+           // European format: 5.445,30
+           numStr = numStr.replace(/\./g, '').replace(',', '.');
+        } else {
+           // US/India format: 5,445.30
+           numStr = numStr.replace(/,/g, '');
+        }
+        return parseFloat(numStr) || 0;
+      }
+      return 0;
+    };
     
     // First, look for explicitly labeled "Total"
     for (let line of lines) {
-      if (line.toLowerCase().includes('total') || line.toLowerCase().includes('amount') || line.toLowerCase().includes('net')) {
-        const match = line.match(amountRegex) || line.match(/(\d+[\.,]\d{2})/);
-        if (match) {
-          const val = parseFloat(match[1].replace(',', '.'));
-          if (val > amount) amount = val;
-        }
-      }
+      const val = extractAmount(line);
+      if (val > maxAmount) maxAmount = val;
       
-      // Also track the absolute largest number on the receipt just in case
-      const anyMatch = line.match(/(\d+[\.,]\d{2})/);
-      if (anyMatch) {
-         const val = parseFloat(anyMatch[1].replace(',', '.'));
-         if (val > maxAmount) maxAmount = val;
+      if (line.toLowerCase().includes('total') || line.toLowerCase().includes('amount') || line.toLowerCase().includes('net')) {
+        if (val > amount) amount = val;
       }
     }
     
