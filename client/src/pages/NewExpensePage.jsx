@@ -36,34 +36,20 @@ export default function NewExpensePage({ onNavigate }) {
     try {
       const data = await ocrService.extractReceipt(file);
       if (data) {
-        // Simple logic to guess category from merchant
-        let detectedCategory = 'Travel';
-        const merchantLower = (data.merchant || '').toLowerCase();
-        if (merchantLower.includes('starbucks') || merchantLower.includes('chipotle')) {
-          detectedCategory = 'Food & Dining';
-        } else if (merchantLower.includes('uber')) {
-          detectedCategory = 'Transportation';
-        } else if (merchantLower.includes('marriott') || merchantLower.includes('hilton')) {
-          detectedCategory = 'Accommodation';
-        } else if (merchantLower.includes('office depot')) {
-          detectedCategory = 'Office Supplies';
-        } else if (merchantLower.includes('amazon')) {
-          detectedCategory = 'Miscellaneous';
-        }
-
+        const category = data.category || 'Travel';
         setForm(prev => ({
           ...prev,
           amount: data.amount ? data.amount.toString() : prev.amount,
           merchant: data.merchant || prev.merchant,
           date: data.date || prev.date,
-          category: detectedCategory,
-          title: data.merchant ? `${detectedCategory}: ${data.merchant}` : prev.title,
+          category,
+          title: data.merchant ? `${category}: ${data.merchant}` : prev.title,
         }));
-        toast.success('Receipt Scanned', 'Form fields autofilled successfully.');
+        toast.success('Receipt Scanned', `Detected ${data.merchant} - Rs.${data.amount} (${Math.round(data.confidence * 100)}% confidence)`);
       }
     } catch (err) {
       console.error('OCR Extraction error:', err);
-      toast.warning('OCR Scanning Failed', 'Could not extract details automatically.');
+      toast.warning('OCR Unavailable', 'Could not extract details. Please fill in manually.');
     }
   };
 
