@@ -1,0 +1,17 @@
+{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/assets/(.*)",
+      "destination": "/client/dist/assets/$1"
+    },
+    {
+      "source": "/uploads/(.*)",
+      "destination": "https://corporate-expense-tracker-test.onrender.com/uploads/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/client/dist/index.html"
+    }
+  ]
+}
