@@ -78,10 +78,14 @@ export default function NewExpensePage({ onNavigate }) {
     if (file) processFile(file);
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!form.title || !form.amount || !form.category) {
-      toast.error('Validation Error', 'Please fill in all required fields.');
+  const handleSubmit = async (e, isReport = false) => {
+    if (e) e.preventDefault();
+    if (!receiptFile) {
+      toast.error('Receipt Required', 'Uploading a receipt is mandatory.');
+      return;
+    }
+    if (!isReport && (!form.title || !form.amount || !form.category)) {
+      toast.error('Validation Error', 'Missing details. If OCR failed, use the Report button.');
       return;
     }
     setLoading(true);
@@ -91,8 +95,17 @@ export default function NewExpensePage({ onNavigate }) {
         const uploadData = await uploadService.uploadReceipt(receiptFile);
         receiptUrl = uploadData.url;
       }
-      await expenseService.create({ ...form, amount: parseFloat(form.amount), receiptUrl });
-      toast.success('Expense Submitted!', 'Your expense has been submitted for approval.');
+      await expenseService.create({ 
+        ...form, 
+        amount: form.amount ? parseFloat(form.amount) : 0, 
+        receiptUrl,
+        isOcrReport: isReport
+      });
+      if (isReport) {
+        toast.success('Report Submitted', 'The expense has been forwarded to the admin for manual review.');
+      } else {
+        toast.success('Expense Submitted!', 'Your expense has been submitted for approval.');
+      }
       onNavigate('expenses');
     } catch (err) {
       toast.error('Submission Failed', err.message);
@@ -114,7 +127,19 @@ export default function NewExpensePage({ onNavigate }) {
       <form onSubmit={handleSubmit}>
         <div style={{ display: 'grid', gridTemplateColumns: '5fr 2.5fr', gap: 'var(--space-xl)' }}>
           {/* Main Form */}
-          <div className="glass-card-static" style={{ padding: 'var(--space-xl)' }}>
+          <div className="glass-card-static" style={{ padding: 'var(--space-xl)', position: 'relative' }}>
+            {!receiptFile && (
+              <div style={{
+                position: 'absolute', inset: 0, background: 'var(--color-bg-glass)', backdropFilter: 'blur(4px)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10, borderRadius: 'var(--radius-lg)'
+              }}>
+                <div style={{ textAlign: 'center', background: 'var(--color-bg-card)', padding: 'var(--space-lg)', borderRadius: 'var(--radius-md)', boxShadow: 'var(--shadow-md)' }}>
+                  <Upload size={32} style={{ color: 'var(--color-primary)', margin: '0 auto 12px' }} />
+                  <h4 style={{ fontWeight: 600, marginBottom: 4 }}>Receipt Required</h4>
+                  <p style={{ fontSize: 'var(--font-size-sm)', color: 'var(--color-text-muted)' }}>You must upload a receipt first.<br/>Fields will be auto-filled and locked.</p>
+                </div>
+              </div>
+            )}
             <h3 style={{ fontSize: 'var(--font-size-lg)', fontWeight: 700, marginBottom: 'var(--space-xl)', display: 'flex', alignItems: 'center', gap: 8 }}>
               <FileText size={18} style={{ color: 'var(--color-primary-light)' }} /> Expense Details
             </h3>
@@ -122,7 +147,7 @@ export default function NewExpensePage({ onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
               <div className="input-group">
                 <label>Title *</label>
-                <input name="title" className="input-field" placeholder="e.g., Client meeting lunch" value={form.title} onChange={handleChange} required />
+                <input name="title" className="input-field" placeholder="e.g., Client meeting lunch" value={form.title} onChange={handleChange} required / disabled={true} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
@@ -130,12 +155,12 @@ export default function NewExpensePage({ onNavigate }) {
                   <label>Amount *</label>
                   <div style={{ position: 'relative' }}>
                     <DollarSign size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                    <input name="amount" type="number" step="0.01" min="0.01" className="input-field" style={{ paddingLeft: 36 }} placeholder="0.00" value={form.amount} onChange={handleChange} required />
+                    <input name="amount" type="number" step="0.01" min="0.01" className="input-field" style={{ paddingLeft: 36 }} placeholder="0.00" value={form.amount} onChange={handleChange} required / disabled={true} />
                   </div>
                 </div>
                 <div className="input-group">
                   <label>Currency</label>
-                  <select name="currency" className="input-field" value={form.currency} onChange={handleChange}>
+                  <select name="currency" className="input-field" value={form.currency} onChange={handleChange} disabled={true}>
                     <option value="INR">INR (₹)</option>
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -147,13 +172,13 @@ export default function NewExpensePage({ onNavigate }) {
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
                 <div className="input-group">
                   <label>Category *</label>
-                  <select name="category" className="input-field" value={form.category} onChange={handleChange}>
+                  <select name="category" className="input-field" value={form.category} onChange={handleChange} disabled={true}>
                     {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
                 <div className="input-group">
                   <label>Date *</label>
-                  <input name="date" type="date" className="input-field" value={form.date} onChange={handleChange} required />
+                  <input name="date" type="date" className="input-field" value={form.date} onChange={handleChange} required / disabled={true} />
                 </div>
               </div>
 
@@ -161,13 +186,13 @@ export default function NewExpensePage({ onNavigate }) {
                 <label>Merchant / Vendor</label>
                 <div style={{ position: 'relative' }}>
                   <Store size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                  <input name="merchant" className="input-field" style={{ paddingLeft: 36 }} placeholder="e.g., Uber, Marriott, Starbucks" value={form.merchant} onChange={handleChange} />
+                  <input name="merchant" className="input-field" style={{ paddingLeft: 36 }} placeholder="e.g., Uber, Marriott, Starbucks" value={form.merchant} onChange={handleChange} / disabled={true} />
                 </div>
               </div>
 
               <div className="input-group">
                 <label>Description</label>
-                <textarea name="description" className="input-field" placeholder="Add any additional details or notes..." value={form.description} onChange={handleChange} rows={3} />
+                <textarea name="description" className="input-field" placeholder="Add any additional details or notes..." value={form.description} onChange={handleChange} rows={3} / disabled={true} />
               </div>
             </div>
           </div>
@@ -216,14 +241,27 @@ export default function NewExpensePage({ onNavigate }) {
             </div>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-              <button type="submit" className="btn btn-primary btn-lg" disabled={loading} style={{ width: '100%' }}>
+              <button type="submit" className="btn btn-primary btn-lg" disabled={loading || !receiptFile} style={{ width: '100%' }}>
                 {loading ? (
-                  <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Submitting...</>
+                  <><span className="spinner" style={{ width: 18, height: 18, borderWidth: 2 }} /> Processing...</>
                 ) : (
                   <><Send size={16} /> Submit Expense</>
                 )}
               </button>
-              <button type="button" className="btn btn-secondary" style={{ width: '100%' }} onClick={() => onNavigate('expenses')}>
+              
+              {receiptFile && (
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  disabled={loading} 
+                  style={{ width: '100%', borderColor: 'var(--color-warning)', color: 'var(--color-warning)' }} 
+                  onClick={(e) => handleSubmit(e, true)}
+                >
+                  Report Inaccurate OCR
+                </button>
+              )}
+
+              <button type="button" className="btn btn-ghost" style={{ width: '100%' }} onClick={() => onNavigate('expenses')}>
                 Cancel
               </button>
             </div>

@@ -149,19 +149,25 @@ router.get('/:id', authenticate, async (req, res) => {
 // POST /api/expenses — create expense
 router.post('/', authenticate, async (req, res) => {
   try {
-    const { title, description, amount, currency, category, date, merchant, receiptUrl, tags } = req.body;
+    const { title, description, amount, currency, category, date, merchant, receiptUrl, tags, isOcrReport } = req.body;
 
-    if (!title || !amount || !category) {
+    if (!isOcrReport && (!title || !amount || !category)) {
       return res.status(400).json({ error: 'Title, amount, and category are required.' });
     }
 
+    const finalTitle = isOcrReport ? `[OCR REVIEW] ${title || 'Failed Extraction'}` : title;
+    const finalAmount = isOcrReport ? parseFloat(amount || 0) : parseFloat(amount);
+    const finalDescription = isOcrReport 
+      ? `[USER REPORTED OCR FAILURE] Please manually review the attached receipt.\n${description || ''}` 
+      : description;
+
     const expense = await Expense.create({
       userId: req.user.id,
-      title,
-      description,
-      amount: parseFloat(amount),
+      title: finalTitle,
+      description: finalDescription,
+      amount: finalAmount,
       currency: currency || 'USD',
-      category,
+      category: category || 'Miscellaneous',
       date: date || new Date().toISOString().split('T')[0],
       merchant,
       receiptUrl,
