@@ -131,54 +131,108 @@ router.post('/upload', authenticate, upload.single('receipt'), (req, res) => {
   }
 });
 
-// ==================== OCR EXTRACTION (Embedded) ====================
-
-const OCR_MERCHANTS = [
-  { name: 'Starbucks Coffee', category: 'Food & Dining', minAmount: 150, maxAmount: 800 },
-  { name: 'Uber Technologies', category: 'Transportation', minAmount: 200, maxAmount: 2500 },
-  { name: 'Delta Airlines', category: 'Travel', minAmount: 5000, maxAmount: 45000 },
-  { name: 'Marriott Hotels', category: 'Accommodation', minAmount: 4000, maxAmount: 25000 },
-  { name: 'Amazon.com', category: 'Office Supplies', minAmount: 300, maxAmount: 5000 },
-  { name: 'Office Depot', category: 'Office Supplies', minAmount: 200, maxAmount: 3000 },
-  { name: 'Chipotle Mexican Grill', category: 'Food & Dining', minAmount: 250, maxAmount: 1200 },
-  { name: 'FedEx Corporation', category: 'Communication', minAmount: 500, maxAmount: 3000 },
-  { name: 'Hilton Hotels', category: 'Accommodation', minAmount: 3500, maxAmount: 20000 },
-  { name: 'Swiggy', category: 'Food & Dining', minAmount: 150, maxAmount: 1500 },
-  { name: 'Ola Cabs', category: 'Transportation', minAmount: 100, maxAmount: 2000 },
-  { name: 'Flipkart', category: 'Miscellaneous', minAmount: 500, maxAmount: 8000 },
-];
+// ==================== OCR EXTRACTION (Embedded Tesseract.js) ====================
+const Tesseract = require('tesseract.js');
+const fs = require('fs');
 
 router.post('/ocr/extract', authenticate, upload.single('receipt'), async (req, res) => {
   try {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded.' });
 
-    // Pick a random merchant profile
-    const merchant = OCR_MERCHANTS[Math.floor(Math.random() * OCR_MERCHANTS.length)];
-    const amount = Math.round((merchant.minAmount + Math.random() * (merchant.maxAmount - merchant.minAmount)) * 100) / 100;
+    // Run Tesseract OCR on the uploaded image
+    const { data: { text, confidence } } = await Tesseract.recognize(
+      req.file.path,
+      'eng',
+      { logger: m => console.log(m) }
+    );
 
-    // Generate a recent date (within the last 7 days)
-    const daysAgo = Math.floor(Math.random() * 7);
-    const receiptDate = new Date();
-    receiptDate.setDate(receiptDate.getDate() - daysAgo);
-    const dateStr = receiptDate.toISOString().split('T')[0];
+    console.log('Extracted OCR Text:', text);
 
-    // Generate line items
-    const itemCount = 1 + Math.floor(Math.random() * 4);
-    const items = [];
-    for (let i = 0; i < itemCount; i++) {
-      items.push(`Item ${i + 1} - Rs.${Math.round(amount / itemCount)}`);
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    
+    // 1. Guess Merchant (Usually the first or second line)
+    let merchant = 'Unknown Merchant';
+    if (lines.length > 0) {
+      // Avoid lines that just say "Receipt" or "Bill"
+      const firstLines = lines.slice(0, 3).filter(l => !/^(receipt|bill|invoice|tax|cash)$/i.test(l));
+      if (firstLines.length > 0) merchant = firstLines[0];
     }
 
-    const confidence = Math.round((0.78 + Math.random() * 0.20) * 100) / 100;
+    // 2. Guess Date (Look for DD/MM/YY, DD/MM/YYYY, MM/DD/YYYY, YYYY-MM-DD)
+    let dateStr = new Date().toISOString().split('T')[0];
+    const dateRegexes = [
+      /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})/, // DD/MM/YY or MM/DD/YY
+      /(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/  // YYYY-MM-DD
+    ];
+
+    for (let line of lines) {
+      for (let regex of dateRegexes) {
+        const match = line.match(regex);
+        if (match) {
+          try {
+            // Very naive date parsing, assumes DD/MM/YY or DD/MM/YYYY
+            let d = parseInt(match[1], 10);
+            let m = parseInt(match[2], 10) - 1; // 0-indexed
+            let y = parseInt(match[3], 10);
+            if (y < 100) y += 2000;
+            const parsedDate = new Date(y, m, d);
+            if (!isNaN(parsedDate.getTime())) {
+              dateStr = parsedDate.toISOString().split('T')[0];
+              break;
+            }
+          } catch (e) {
+            // Ignore date parsing errors
+          }
+        }
+      }
+    }
+
+    // 3. Guess Amount (Find the largest decimal number, usually the total)
+    let amount = 0.0;
+    const amountRegex = /[\$£€Rs\s]*(\d+[\.,]\d{2})/i;
+    let maxAmount = 0.0;
+    
+    // First, look for explicitly labeled "Total"
+    for (let line of lines) {
+      if (line.toLowerCase().includes('total') || line.toLowerCase().includes('amount')) {
+        const match = line.match(amountRegex) || line.match(/(\d+[\.,]\d{2})/);
+        if (match) {
+          const val = parseFloat(match[1].replace(',', '.'));
+          if (val > amount) amount = val;
+        }
+      }
+      
+      // Also track the absolute largest number on the receipt just in case
+      const anyMatch = line.match(/(\d+[\.,]\d{2})/);
+      if (anyMatch) {
+         const val = parseFloat(anyMatch[1].replace(',', '.'));
+         if (val > maxAmount) maxAmount = val;
+      }
+    }
+    
+    // If no explicit total found, use the largest decimal number
+    if (amount === 0.0) amount = maxAmount;
+
+    // 4. Guess Category based on keywords in text
+    let category = 'Miscellaneous';
+    const textLower = text.toLowerCase();
+    if (/(restaurant|cafe|coffee|food|dining|eats|burger|pizza)/.test(textLower)) category = 'Food & Dining';
+    else if (/(taxi|uber|lyft|transit|train|airline|flight|cab)/.test(textLower)) category = 'Transportation';
+    else if (/(hotel|motel|inn|resort|accommodation)/.test(textLower)) category = 'Accommodation';
+    else if (/(office|supplies|paper|staples|depot)/.test(textLower)) category = 'Office Supplies';
+    else if (/(phone|mobile|internet|telecom)/.test(textLower)) category = 'Communication';
+
+    // 5. Build simple item list
+    const items = lines.slice(0, Math.min(lines.length, 5)).map((l, i) => `Scanned Item ${i+1}: ${l.substring(0, 30)}`);
 
     res.json({
-      merchant: merchant.name,
+      merchant,
       amount,
       date: dateStr,
-      category: merchant.category,
+      category,
       items,
-      raw_text: `[OCR Scan] File: ${req.file.originalname}, Size: ${req.file.size} bytes`,
-      confidence,
+      raw_text: text,
+      confidence: confidence / 100, // Tesseract returns 0-100, normalize to 0-1
     });
   } catch (error) {
     console.error('OCR Extraction error:', error);
