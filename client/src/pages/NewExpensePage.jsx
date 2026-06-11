@@ -147,7 +147,7 @@ export default function NewExpensePage({ onNavigate }) {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
               <div className="input-group">
                 <label>Title *</label>
-                <input name="title" className="input-field" placeholder="e.g., Client meeting lunch" value={form.title} onChange={handleChange} required / disabled={true} />
+                <input name="title" className="input-field" placeholder="e.g., Client meeting lunch" value={form.title} onChange={handleChange} required disabled={true} />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-md)' }}>
@@ -155,7 +155,7 @@ export default function NewExpensePage({ onNavigate }) {
                   <label>Amount *</label>
                   <div style={{ position: 'relative' }}>
                     <DollarSign size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                    <input name="amount" type="number" step="0.01" min="0.01" className="input-field" style={{ paddingLeft: 36 }} placeholder="0.00" value={form.amount} onChange={handleChange} required / disabled={true} />
+                    <input name="amount" type="number" step="0.01" min="0.01" className="input-field" style={{ paddingLeft: 36 }} placeholder="0.00" value={form.amount} onChange={handleChange} required disabled={true} />
                   </div>
                 </div>
                 <div className="input-group">
@@ -178,7 +178,7 @@ export default function NewExpensePage({ onNavigate }) {
                 </div>
                 <div className="input-group">
                   <label>Date *</label>
-                  <input name="date" type="date" className="input-field" value={form.date} onChange={handleChange} required / disabled={true} />
+                  <input name="date" type="date" className="input-field" value={form.date} onChange={handleChange} required disabled={true} />
                 </div>
               </div>
 
@@ -186,13 +186,13 @@ export default function NewExpensePage({ onNavigate }) {
                 <label>Merchant / Vendor</label>
                 <div style={{ position: 'relative' }}>
                   <Store size={14} style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--color-text-muted)' }} />
-                  <input name="merchant" className="input-field" style={{ paddingLeft: 36 }} placeholder="e.g., Uber, Marriott, Starbucks" value={form.merchant} onChange={handleChange} / disabled={true} />
+                  <input name="merchant" className="input-field" style={{ paddingLeft: 36 }} placeholder="e.g., Uber, Marriott, Starbucks" value={form.merchant} onChange={handleChange} disabled={true} />
                 </div>
               </div>
 
               <div className="input-group">
                 <label>Description</label>
-                <textarea name="description" className="input-field" placeholder="Add any additional details or notes..." value={form.description} onChange={handleChange} rows={3} / disabled={true} />
+                <textarea name="description" className="input-field" placeholder="Add any additional details or notes..." value={form.description} onChange={handleChange} rows={3} />
               </div>
             </div>
           </div>
