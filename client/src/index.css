@@ -477,9 +477,6 @@ textarea.input-field { resize: vertical; min-height: 100px; }
   margin-bottom: 4px;
   line-height: 1.1;
   background: linear-gradient(135deg, var(--color-text-primary) 0%, var(--color-text-secondary) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .kpi-change {
@@ -580,30 +577,27 @@ textarea.input-field { resize: vertical; min-height: 100px; }
 }
 
 .sidebar-brand-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: var(--radius-md);
-  background: var(--gradient-primary);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px var(--color-primary-glow);
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
 
 
 
-.sidebar-brand-icon svg { width: 18px; height: 18px; color: #fff; }
+.sidebar-brand-icon svg { width: 18px; height: 18px; color: var(--color-bg-primary); }
 
 .sidebar-brand-text {
-  font-size: var(--font-size-lg);
+  font-size: 1.125rem;
   font-weight: 800;
   letter-spacing: -0.02em;
-  background: linear-gradient(135deg, #fff 0%, var(--color-primary-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--color-text-primary);
 }
 
 .sidebar.collapsed .sidebar-brand-text,
@@ -977,9 +971,6 @@ textarea.input-field { resize: vertical; min-height: 100px; }
   font-weight: 800;
   margin-bottom: var(--space-md);
   background: linear-gradient(135deg, #fff, var(--color-primary-light));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .login-right-content p {
@@ -1213,9 +1204,6 @@ textarea.input-field { resize: vertical; min-height: 100px; }
   font-weight: 900;
   letter-spacing: -2px;
   background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 /* ========== LIVE FEED ========== */
