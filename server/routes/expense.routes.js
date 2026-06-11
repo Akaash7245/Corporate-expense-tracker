@@ -179,15 +179,32 @@ router.post('/', authenticate, async (req, res) => {
       include: [{ model: User, as: 'user', attributes: ['id', 'firstName', 'lastName', 'email', 'department', 'avatar'] }],
     });
 
-    // Notify managers
+    // Notify concerned accounts
+    const notificationTitle = isOcrReport ? 'OCR Review Required' : 'New Expense Submitted';
+    const notificationMessage = isOcrReport
+      ? `${req.user.firstName} ${req.user.lastName} reported an OCR failure for expense: ${finalTitle}`
+      : `${req.user.firstName} ${req.user.lastName} submitted "${finalTitle}" for $${finalAmount}`;
+
     if (req.user.managerId) {
       await Notification.create({
         userId: req.user.managerId,
-        title: 'New Expense Submitted',
-        message: `${req.user.firstName} ${req.user.lastName} submitted "${title}" for $${amount}`,
+        title: notificationTitle,
+        message: notificationMessage,
         type: 'approval',
         metadata: { expenseId: expense.id },
       });
+    } else if (isOcrReport) {
+      // If no manager and it's an OCR report, notify admins
+      const admins = await User.findAll({ where: { role: 'admin' } });
+      for (const admin of admins) {
+        await Notification.create({
+          userId: admin.id,
+          title: notificationTitle,
+          message: notificationMessage,
+          type: 'approval',
+          metadata: { expenseId: expense.id },
+        });
+      }
     }
 
     // Emit socket event
