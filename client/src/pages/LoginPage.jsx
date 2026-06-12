@@ -107,24 +107,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* Right Panel — Feature Showcase */}
-      <div className="login-right">
-        <div className="login-right-content">
-          <h2>Streamline your expense workflow</h2>
-          <p>Submit, approve, and analyze expenses in real-time with our AI-powered platform built for modern teams.</p>
-
-          <div className="login-features">
-            {features.map((f, i) => (
-              <div key={i} className="login-feature" style={{ animationDelay: `${i * 100}ms` }}>
-                <div className="login-feature-icon" style={{ background: f.color }}>
-                  <f.icon size={18} style={{ color: 'var(--color-text-primary)' }} />
-                </div>
-                <span className="login-feature-text">{f.text}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      {/* Right Panel — Feature Showcase Removed per request */}
     </div>
   );
 }
