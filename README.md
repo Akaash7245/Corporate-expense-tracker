@@ -97,4 +97,50 @@ You can log in using any of the seeded demo accounts:
 * The React frontend listens for these events and automatically refetches dashboard data, ensuring managers and finance teams see live, real-time metrics without refreshing the page.
 
 ---
+
+## 🏗️ Detailed Architecture & Mechanics
+
+### Frontend Mechanics
+The frontend is built as a Single Page Application (SPA) using **React 18** and **Vite**.
+* **State Management**: React Context API is used alongside local component state. Form states are managed locally, while global user authentication state is passed down through a Provider.
+* **Component Design**: The UI is divided into reusable micro-components (e.g., `StatCard`, `ExpenseTable`, `Modal`). We utilized **Lucide-React** for consistent iconography.
+* **Data Visualization**: We heavily utilize **Recharts** for rendering dynamic SVG-based charts on the Admin and Finance dashboards. The charts automatically adapt to the dark/light mode CSS variables.
+* **Client-Side OCR**: We use **Tesseract.js** in the browser to perform Optical Character Recognition on uploaded receipts. By processing images directly on the client, we save backend bandwidth and provide instant feedback to the user before the form is even submitted.
+
+### Backend Mechanics
+The backend is a RESTful API built with **Node.js** and **Express.js**.
+* **Database & ORM**: We use **Sequelize ORM** mapped to an **SQLite** database (`database.sqlite`). SQLite was chosen for zero-config portability during development, but the ORM allows swapping to PostgreSQL simply by changing the dialect in `config/database.js`.
+* **Authentication**: When a user logs in, the backend uses **Bcrypt.js** to verify password hashes and issues a **JSON Web Token (JWT)**. The frontend stores this token and passes it in the `Authorization` header (`Bearer <token>`) for all subsequent API requests.
+* **Middleware**: We use custom Express middleware (`authMiddleware`) to verify JWTs and check Role-Based Access Controls (RBAC). For example, only users with `role: 'admin'` or `role: 'finance'` can access the global `/api/analytics` endpoints.
+* **Multer**: Used for `multipart/form-data` parsing when uploading actual receipt image files, storing them locally (or in a cloud bucket for production).
+
+---
+
+## 🌍 Internet Deployment Guide
+
+Deploying this application to the live internet requires hosting the Frontend and Backend separately, as they have different architectural needs.
+
+### 1. Frontend Deployment (Vercel)
+The React/Vite frontend is deployed to **Vercel**, which is highly optimized for static site generation and SPAs.
+1. Connect your GitHub repository to Vercel.
+2. Set the **Framework Preset** to `Vite`.
+3. Set the **Root Directory** to `client`.
+4. Set the **Build Command** to `npm run build` and **Output Directory** to `dist`.
+5. Add the Environment Variable `VITE_API_URL` and point it to your live Backend URL (e.g., `https://spendora-backend.onrender.com/api`).
+6. Click Deploy. Vercel automatically builds and serves the frontend on a global CDN.
+
+### 2. Backend Deployment (Render / Railway)
+Because the backend requires a persistent Node.js runtime (and a persistent disk for the SQLite database), it is best deployed on a platform like **Render** or **Railway**.
+1. Connect your GitHub repository to Render (Web Service).
+2. Set the **Root Directory** to `server`.
+3. Set the **Build Command** to `npm install`.
+4. Set the **Start Command** to `npm start` (or `node server.js`).
+5. Add Environment Variables: `JWT_SECRET`, `PORT` (usually auto-assigned), and `NODE_ENV=production`.
+6. **Important Note on SQLite**: If using Render, you must attach a "Persistent Disk" to the `/server` directory so the `database.sqlite` file isn't wiped out every time the server restarts. Alternatively, swap Sequelize to use a managed PostgreSQL database URL.
+
+### 3. SEO & Safe Browsing
+Because the frontend is hosted on a free domain (e.g., `.vercel.app`) and contains a login form, Google Chrome may temporarily flag it as a "Deceptive Site".
+* **Fix**: We embedded a `<meta name="google-site-verification">` tag in `index.html`. You verify the domain in Google Search Console and click "Request Review" to clear the false-positive warning globally.
+
+---
 *Developed by the Antigravity Team*
