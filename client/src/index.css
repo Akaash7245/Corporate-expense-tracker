@@ -971,7 +971,7 @@ textarea.input-field { resize: vertical; min-height: 100px; }
   font-size: var(--font-size-2xl);
   font-weight: 800;
   margin-bottom: var(--space-md);
-  background: linear-gradient(135deg, #fff, var(--color-primary-light));
+  color: #ffffff;
 }
 
 .login-right-content p {
