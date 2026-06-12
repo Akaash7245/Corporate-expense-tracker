@@ -1025,26 +1025,17 @@ textarea.input-field { resize: vertical; min-height: 100px; }
 .login-brand-icon {
   width: 56px;
   height: 56px;
-  border-radius: var(--radius-lg);
-  background: var(--gradient-primary);
+  border-radius: 14px;
+  background: var(--color-primary);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: var(--space-md);
-  box-shadow: 0 8px 40px var(--color-primary-glow);
+  box-shadow: var(--shadow-sm);
   position: relative;
 }
-.login-brand-icon::after {
-  content: '';
-  position: absolute;
-  inset: -4px;
-  border-radius: inherit;
-  background: var(--gradient-primary);
-  z-index: -1;
-  filter: blur(16px);
-  opacity: 0.4;
-}
-.login-brand-icon svg { width: 26px; height: 26px; color: #fff; }
+
+.login-brand-icon svg { width: 28px; height: 28px; color: var(--color-bg-primary); }
 
 .login-brand h1 {
   font-size: var(--font-size-2xl);
