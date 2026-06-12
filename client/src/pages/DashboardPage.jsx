@@ -46,7 +46,7 @@ export default function DashboardPage({ onNavigate, realtimeExpenses }) {
     },
     {
       label: 'Pending Approval',
-      value: formatCurrency(stats?.amounts?.pending),
+      value: formatCurrency((stats?.amounts?.total || 0) - (stats?.amounts?.approved || 0)),
       icon: Clock,
       iconClass: 'warning',
       kpiClass: 'kpi-warning',
