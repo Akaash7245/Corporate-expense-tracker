@@ -56,7 +56,7 @@ export default function LoginPage() {
               <Wallet size={26} />
             </div>
             <h1>Spendora</h1>
-            <p>Enterprise expense management platform</p>
+            <p>Corporate expense management platform</p>
           </div>
 
           <form className="login-form" onSubmit={handleSubmit}>
